@@ -48,6 +48,15 @@ class TaskCreate(BaseModel):
     status: Optional[str] = None       # Optional: Task status
     due_date: Optional[date] = None    # Optional: Due date
 
+class TaskUpdate(BaseModel):
+    #This blueprint allows updating any subset of task fields.
+    # # All fields are optional, so only the fields provided will be changed.
+
+    title: Optional[str] = None
+    assigned_to: Optional[str] = None
+    status: Optional[str] = None
+    due_date: Optional[date] = None
+
 # --------------------------
 # API ROUTES
 # --------------------------
@@ -78,16 +87,6 @@ def get_tasks(db: Session = Depends(get_db)):
     """
     tasks = db.query(models.Task).all() # Get all tasks from the DB
     return tasks # Return the list of tasks back to client
-
-
-class TaskUpdate(BaseModel):
-    #This blueprint allows updating any subset of task fields.
-    # # All fields are optional, so only the fields provided will be changed.
-
-    title: Optional[str] = None
-    assigned_to: Optional[str] = None
-    status: Optional[str] = None
-    due_date: Optional[date] = None
 
 
 @app.put("/tasks/{task_id}") # When a PUT request is made to /tasks/{task_id} to update a specific task
@@ -128,9 +127,24 @@ def delete_task(task_id: int, db: Session = Depends(get_db)):
     """
     db_task = db.query(models.Task).filter(models.Task.id == task_id).first()
     if not db_task:
-        return HTTPException(status_code=404, detail ="Task not found")
+        raise HTTPException(status_code=404, detail ="Task not found")
     db.delete(db_task)
     db.commit()
     return {"message": f"Task {task_id} deleted successfully"}
+
+
+@app.get("/tasks/{task_id}") # When a GET request is made to /tasks/{task_id} to fetch a specific task
+def get_task(task_id: int, db: Session = Depends(get_db)):
+    """
+    This route fetches a specific task by ID from the database.
+    Steps:
+    1. Find the task by ID
+    2. If not found, return an error
+    3. Return the task
+    """
+    db_task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    if not db_task:
+        raise HTTPException(status_code=404, detail ="Task not found")
+    return db_task
 # --------------------------
 
